@@ -33,8 +33,8 @@ unsigned char
     bit_max_conjunto,  // Posicion (0 - N-1) del bit de mayor posicion de linea
     bit_max_linea;     // Posicion (0 - N-1) del bit de mayor posicion
                        // del conjunto
-char DirConfig[] = "./config.txt";
-char DirTraza[] = "./traza_b.txt";
+char DirConfig[] = "./config.txt";  // Direccion del fichero de configuracion
+char DirTraza[] = "./traza.txt";    // Direccion del fichero con la traza
 
 //---------------- DECLARACION FUNCIONES ------------------------
 /**************************
@@ -64,7 +64,7 @@ void Actualizar_Antiguedad(Conjunto* C);
 unsigned long ObtenerLineaAntigua(Conjunto* C);
 void LRU(Conjunto* C, unsigned long TAG);
 unsigned long calcularTAG_VC(unsigned long TAG, unsigned long ID_Conjunto);
-void LRU_VC_A(Conjunto* C, Linea* linea, unsigned long TAG);
+void LRU_VC_H(Conjunto* C, Linea* linea, unsigned long TAG);
 void LRU_VC_M(Conjunto* C, unsigned long TAG);
 /**************************
  *        BUSQUEDAS        *
@@ -148,8 +148,8 @@ Cache* crearCache(unsigned long nConjuntos, unsigned long Asociatividad) {
 }
 
 /****************************
-*       LEER CONFIGS        *
-*****************************/
+ *       LEER CONFIGS        *
+ *****************************/
 /******************************************************************************
     FUNCION: leerTrazas()
     DESCRIPCION: Lee el archivo de trazas que simularan los accesos a memoria de
@@ -195,7 +195,7 @@ void leerConfigCache() {
 }
 
 /****************************
- *     CALCULOS DE BITS      *
+ *     CALCULOS DE BITS     *
  *****************************/
 /******************************************************************************
     FUNCION: esPotenciade2(num)
@@ -254,7 +254,7 @@ unsigned long desplazarBitsIzq(unsigned long a, unsigned long b) {
     FUNCION: calcular_bits_linea_y_conjunto(TamLineas, nConjuntos)
     DESCRIPCION: Obtiene los bits que separan las lineas de los conjuntos y
                  los conjuntos del TAG
-    FUNCIONAMIENTO: Primero calcula el número de bits necesarios para 
+    FUNCIONAMIENTO: Primero calcula el número de bits necesarios para
                     almacenar la linea, y una vez hecho, calcula los bits
                     necesarios para almacenar nConjuntos.
 ******************************************************************************/
@@ -294,21 +294,13 @@ unsigned long int rangobits(unsigned long int n, int bitmenor, int bitmayor) {
     return n;
 }
 
-//  --- LRU ---
+/****************************
+ *            LRU           *
+ *****************************/
 
-/*
-    FUNCION: Actualizar_Antiguedad(C)
-        Descripcion: Aumenta en 1 la antiguedad de todas las lineas
-                     del conjunto
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: Actualizar_Antiguedad(C)
+    DESCRIPCION: Aumenta en 1 la antiguedad de todas las lineas del conjunto
 ******************************************************************************/
 void Actualizar_Antiguedad(Conjunto* C) {
     for (unsigned long i = 0; i < C->nLineas; i++) {
@@ -316,20 +308,12 @@ void Actualizar_Antiguedad(Conjunto* C) {
     }
 }
 
-/*
-    FUNCION: ObtenerLineaAntigua(C)
-        Descripcion: Devuelve la posicion de la linea
-                     que lleve mas tiempo sin ser usada
-        Ejemplo:
-        Funcionamiento: Realiza una busqueda con recorrido de
-                        todas las lineas del conjunto.
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: ObtenerLineaAntigua(C)
+    DESCRIPCION: Devuelve la posicion de la linea que lleve mas tiempo sin
+                 ser usada
+    FUNCIONAMIENTO: Realiza una busqueda con recorrido de todas las lineas
+                    del conjunto y devuelve aquella que tenga mas Antiguedad.
 ******************************************************************************/
 unsigned long ObtenerLineaAntigua(Conjunto* C) {
     long l = 0;
@@ -339,18 +323,13 @@ unsigned long ObtenerLineaAntigua(Conjunto* C) {
     return l;
 }
 
-/*
-    FUNCION: LRU(C, TAG)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: LRU(C, TAG)
+    DESCRIPCION: Sustituye la linea con mas antiguedad (la que hace mas tiempo
+                 que no se ha usado) y la sustituye por la nueva. Para la
+                 simulación esto se hace cambiando unicamente el tag. Una vez
+                 con el nuevo TAG, se pone su antiguedad a 0 y se marca como
+                 Activa (es decir, que tiene datos relevantes para la traza)
 ******************************************************************************/
 void LRU(Conjunto* C, unsigned long TAG) {
     long l = ObtenerLineaAntigua(C);
@@ -359,18 +338,15 @@ void LRU(Conjunto* C, unsigned long TAG) {
     C->lineas[l]->Activa = 1;
 }
 
-/*
-    FUNCION: calcularTAG_VC(TAG, ID_Conjunto)
-        Descripcion: Funcion que concatena los bits de TAG y Conjunto
-        Ejemplo: calcularTAG_VC(101, 001) -> 101001
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: calcularTAG_VC(TAG, ID_Conjunto)
+    DESCRIPCION: Funcion que concatena los bits de TAG y Conjunto para obtener
+                 el TAG de la VC.
+    FUNCIONAMIENTO: Se desplazan hacia la izquierda tantos bits como bits
+                    tenga los conjuntos de la cache principal y se hace
+                    la operación OR del TAG desplazado y el conjunto.
+    EJEMPLO: calcularTAG_VC(101, 001) -> (Desplazamiento) 101000 ->
+             (OR) 101001
 ******************************************************************************/
 unsigned long calcularTAG_VC(unsigned long TAG, unsigned long ID_Conjunto) {
     unsigned long TAG_VC;
@@ -380,37 +356,27 @@ unsigned long calcularTAG_VC(unsigned long TAG, unsigned long ID_Conjunto) {
     return TAG_VC;
 }
 
-/*
-    FUNCION: LRU_VC_A(C, linea, TAG)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: LRU_VC_H(C, linea, TAG)
+    DESCRIPCION: Ejecuta LRU con VictimCache en caso de acierto en la VC
+    FUNCIONAMIENTO: Obtiene la linea mas antigua de la Cache principal, se 
+                    calcula el TAG para la VC de dicha linea y se mete en la
+                    VC poniendo su antiguedad a 0. Y en la cache principal se
+                    actualiza el TAG y la antiguedad de la linea "nueva" que
+                    estaba en la VC.
 ******************************************************************************/
-void LRU_VC_A(Conjunto* C, Linea* linea, unsigned long TAG) {
+void LRU_VC_H(Conjunto* C, Linea* linea, unsigned long TAG) {
     unsigned long l = ObtenerLineaAntigua(C);
     // linea contiene la linea de la VC
     linea->TAG = calcularTAG_VC(C->lineas[l]->TAG, C->ID);
     linea->Antiguedad = 0;
-    //
+    // Linea en la Cache principal
     C->lineas[l]->TAG = TAG;
     C->lineas[l]->Antiguedad = 0;
 }
 
-/*
-    FUNCION: calcularTAG_VC(C, TAG)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
+    FUNCION: LRU_VC_H(C, TAG)
     DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
                  bitmayor
     FUNCIONAMIENTO:
@@ -418,8 +384,7 @@ void LRU_VC_A(Conjunto* C, Linea* linea, unsigned long TAG) {
 ******************************************************************************/
 void LRU_VC_M(Conjunto* C, unsigned long TAG) {
     unsigned long l = ObtenerLineaAntigua(C);
-    // Si la linea de la Cache esta activa, guardarla
-    // en la VC
+    // Si la linea de la Cache esta activa, guardarla en la VC
     if (C->lineas[l]->Activa) {
         unsigned long l_VC = ObtenerLineaAntigua(vcache->C[0]);
         vcache->C[0]->lineas[l_VC]->TAG =
@@ -427,8 +392,7 @@ void LRU_VC_M(Conjunto* C, unsigned long TAG) {
         vcache->C[0]->lineas[l_VC]->Antiguedad = 0;
         vcache->C[0]->lineas[l_VC]->Activa = 1;
     }
-    // Reemplazar la linea de la cache principal con la
-    // nueva linea
+    // Reemplazar la linea de la cache principal con la nueva linea
     C->lineas[l]->TAG = TAG;
     C->lineas[l]->Antiguedad = 0;
     C->lineas[l]->Activa = 1;
@@ -471,10 +435,10 @@ void buscarEnConjunto(Conjunto* C, unsigned long direccion) {
     // bits_TAG contiene el numero de bits total de la direccion
     unsigned char bits_TAG = numBits_para_N_Posiciones(direccion);
     // Si la cache es totalmente Asociativa
-    if (cache->NumConjuntos < 2) {
+    if (cache->NumConjuntos < 2)
         TAG = rangobits(direccion, bit_max_linea + 1, bits_TAG);
-        // Si los bits de conjunto y del tag se solapan, es que el TAG es 0
-    } else if (bit_max_conjunto >= bits_TAG)
+    // Si los bits de conjunto y del tag se solapan, es que el TAG es 0
+    else if (bit_max_conjunto >= bits_TAG)
         TAG = 0;
     // En caso "Normal", obtener el TAG desde donde terminan los bits
     // del conjunto, hasta el ultimo bit de la direccion
@@ -489,7 +453,7 @@ void buscarEnConjunto(Conjunto* C, unsigned long direccion) {
         linea = buscarEnConjuntoVC(vcache->C[0], direccion);
         if (linea) {
             Hit++;
-            LRU_VC_A(C, linea, TAG);
+            LRU_VC_H(C, linea, TAG);
         } else {
             Miss++;
             LRU_VC_M(C, TAG);

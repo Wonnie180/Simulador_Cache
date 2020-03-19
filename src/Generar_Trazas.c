@@ -3,7 +3,7 @@
 #include "../libraries/Ficheros.h"
 
 Fichero* f;
-char DirTraza[] = "./traza_M_filas.txt";
+char DirTraza[] = "./traza_VC.txt";
 /*
 #define N 1024
 int main() {
@@ -31,11 +31,12 @@ int main() {
 #define M 1024
 int main() {
     double A[N][M];
+    double x;
     f = crearFichero();
     inicializarFicheroEscritura(f, DirTraza);
     for (unsigned long j = 0; j < M; j++) {
         for (unsigned long i = 0; i < N; i++) {
-            A[i][j] = A[i][j] + A[i][j];
+            x = A[i][j] + x;
             fprintf(f->f, "%p ", &A[i][j]);
         }
     }
