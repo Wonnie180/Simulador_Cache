@@ -97,7 +97,7 @@ int main() {
     }
     // Fin del procesamiento
     mostrarResultados();
-    // mostrarContenidoCache(cache);
+    mostrarContenidoCache(cache);
     // mostrarContenidoCache(vcache);
     return 0;
 }
@@ -359,7 +359,7 @@ unsigned long calcularTAG_VC(unsigned long TAG, unsigned long ID_Conjunto) {
 /*****************************************************************************
     FUNCION: LRU_VC_H(C, linea, TAG)
     DESCRIPCION: Ejecuta LRU con VictimCache en caso de acierto en la VC
-    FUNCIONAMIENTO: Obtiene la linea mas antigua de la Cache principal, se 
+    FUNCIONAMIENTO: Obtiene la linea mas antigua de la Cache principal, se
                     calcula el TAG para la VC de dicha linea y se mete en la
                     VC poniendo su antiguedad a 0. Y en la cache principal se
                     actualiza el TAG y la antiguedad de la linea "nueva" que
@@ -376,11 +376,11 @@ void LRU_VC_H(Conjunto* C, Linea* linea, unsigned long TAG) {
 }
 
 /*****************************************************************************
-    FUNCION: LRU_VC_H(C, TAG)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: LRU_VC_M(C, TAG)
+    DESCRIPCION: Ejecuta LRU con VictimCache en caso de fallo en la VC.
+    FUNCIONAMIENTO: Obtiene la linea mas antigua de la Cache principal y si la
+                    linea esta Activa, la guarda en la VC, ejecutando LRU en
+                    la VC (mismo proceso ya explicado anteriormente).
 ******************************************************************************/
 void LRU_VC_M(Conjunto* C, unsigned long TAG) {
     unsigned long l = ObtenerLineaAntigua(C);
@@ -398,37 +398,28 @@ void LRU_VC_M(Conjunto* C, unsigned long TAG) {
     C->lineas[l]->Activa = 1;
 }
 
-//  --- BUSQUEDAS ---
-/*
-    FUNCION: obtenerConjunto(direccion)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
+/****************************
+ *         BUSQUEDAS        *
+ ****************************/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: obtenerConjunto(direccion)
+    DESCRIPCION: Obtiene el conjunto al que pertenece una dirección de memoria
+    FUNCIONAMIENTO: Utilizando la funcion rangobits, obtiene el valor que hay
+                    entre el primer bit de conjunto y el ultimo. En caso de
+                    solo existir un conjunto, devuelve este.
 ******************************************************************************/
 Conjunto* obtenerConjunto(unsigned long direccion) {
     if (cache->NumConjuntos == 1) return cache->C[0];
     return cache->C[rangobits(direccion, bit_max_linea + 1, bit_max_conjunto)];
 }
 
-/*
-    FUNCION: buscarEnConjunto(C, direccion)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: buscarEnConjunto(C, direccion)
+    DESCRIPCION: Busca en el conjunto si existe la linea, en caso de existir,
+                 sera un acierto (hit), en caso contrario sera un fallo (miss)
+    FUNCIONAMIENTO: Obtiene el TAG de la direccion (primero obtiene el mayor
+                    bit de la direccion) y utiliza dicho TAG para buscar la
+                    linea en el conjunto y la VC si existe.
 ******************************************************************************/
 void buscarEnConjunto(Conjunto* C, unsigned long direccion) {
     unsigned long TAG;
@@ -464,18 +455,12 @@ void buscarEnConjunto(Conjunto* C, unsigned long direccion) {
     }
 }
 
-/*
-    FUNCION: buscarLinea(C, TAG)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: buscarLinea(C, TAG)
+    DESCRIPCION: Busca la linea en el Conjunto y en caso de que exista, la
+                 devuelve.
+    FUNCIONAMIENTO: Realiza una busqueda de la linea (TAG), y en cuanto la
+                    encuentra, la devuelve.
 ******************************************************************************/
 Linea* buscarLinea(Conjunto* C, unsigned long TAG) {
     Linea* linea = NULL;
@@ -485,18 +470,12 @@ Linea* buscarLinea(Conjunto* C, unsigned long TAG) {
     return linea;
 }
 
-/*
-    FUNCION: buscarEnConjuntoVC(C, direccion)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: buscarEnConjuntoVC(C, direccion)
+    DESCRIPCION: A efectos practicos, es lo mismo que buscarLinea, pero en
+                 este caso, se construye el TAG de la VC para buscar la linea.
+    FUNCIONAMIENTO: Realiza una busqueda de la linea (TAG), y en cuanto la
+                    encuentra, la devuelve.
 ******************************************************************************/
 Linea* buscarEnConjuntoVC(Conjunto* C, unsigned long direccion) {
     unsigned long TAG;
@@ -513,24 +492,28 @@ Linea* buscarEnConjuntoVC(Conjunto* C, unsigned long direccion) {
     return linea;
 }
 
-//  --- MOSTRAR DATOS/RESULTADOS ---
-
-/*
-    FUNCION: mostrarBits(C, linea, VC)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
+/****************************
+ * MOSTRAR DATOS/RESULTADOS *
+ ****************************/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION:  mostrarBits(C, linea, nCon)
+    DESCRIPCION: Muestra una linea en formato binario y hexadecimal separando
+                 el TAG, el conjunto y los bits de linea.
+    FUNCIONAMIENTO: Se crea la variable 'i' la cual tiene tantos bits como 
+                    el maximo tamaño posible de direcciones (constante TAM_DIR)
+                    menos el tamaño actual de las direccion a mostrar.
+                    Despues se concatenan los bits del tag y del conjunto.
+                    Se ponen los bits de linea a 0 y se guarda esa dirección
+                    en la variable 'dir_l' la cual es la direccion mas baja
+                    de la linea. Tras esto, se ponen los bits de linea a 1 y 
+                    se guarda en 'dir_h', la cual es la direccion mas alta de
+                    la linea.
 ******************************************************************************/
 void mostrarBits(Conjunto* C, Linea* linea, unsigned char nCon) {
-    unsigned long long i = (unsigned long long)1
-                           << TAM_DIR - (bit_max_conjunto + bit_max_linea + 1);
+    unsigned long long i;
+    i = (unsigned long)1 << TAM_DIR - (bit_max_conjunto + bit_max_linea + 1);
+    // Se recorre la direccion bit a bit (dividiendo entre 2) y mostrando 1 o 0
+    // dependiendo del valor de dicho bit.
     for (; i > 0; i = i / 2) {
         if (linea->TAG & i)
             printf("1");
@@ -539,7 +522,7 @@ void mostrarBits(Conjunto* C, Linea* linea, unsigned char nCon) {
     }
     unsigned long long dir_l, dir_h;
     dir_l = linea->TAG;
-    // dir_h |= 1UL << ;
+    // Caso especial en el que solo haya un conjunto (VC por ejemplo)
     if (nCon == 1) {
         dir_l = calcularTAG_VC(linea->TAG, C->ID);
         printf("|");
@@ -557,25 +540,15 @@ void mostrarBits(Conjunto* C, Linea* linea, unsigned char nCon) {
     // Poner a 1 los bit_maxlinea+1 ultimos bits de dir_l
     if (bit_max_linea > 0) {
         printf("|");
-        for (i = 0; i <= bit_max_linea; i++) {
+        for (i = 0; i <= bit_max_linea; i++)
             printf("x");
-        }
     }
     printf(" -> 0x%x - 0x%x\n", dir_l, dir_h);
 }
 
-/*
-    FUNCION: mostrarContenidoConjunto(C, VC)
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: mostrarContenidoConjunto(C, nCon)
+    DESCRIPCION: Muestra las lineas que hay en el conjunto
 ******************************************************************************/
 void mostrarContenidoConjunto(Conjunto* C, unsigned char nCon) {
     printf("Conjunto %lu:\n", C->ID);
@@ -587,18 +560,9 @@ void mostrarContenidoConjunto(Conjunto* C, unsigned char nCon) {
     }
 }
 
-/*
-    FUNCION: mostrarContenidoCache()
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: mostrarContenidoCache()
+    DESCRIPCION: Muestra el contenido de la cache
 ******************************************************************************/
 void mostrarContenidoCache(Cache* Ca) {
     if (!Ca) return;
@@ -609,18 +573,9 @@ void mostrarContenidoCache(Cache* Ca) {
     printf("------------\n\n");
 }
 
-/*
-    FUNCION: mostrarTraza()
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: mostrarTraza()
+    DESCRIPCION: Muestra todas las direcciones de la traza en hexadecimal
 ******************************************************************************/
 void mostrarTraza() {
     for (long i = 0; i < N && traza[i] != -1; i++) {
@@ -629,18 +584,10 @@ void mostrarTraza() {
     printf("\n");
 }
 
-/*
-    FUNCION: mostrarResultados()
-        Descripcion:
-        Ejemplo:
-        Funcionamiento:
-*/
 /*****************************************************************************
-    FUNCION: rangobits(n, bitmenor, bitmayor)
-    DESCRIPCION: Calcula el valor de los bits que hay entre bitmenor y
-                 bitmayor
-    FUNCIONAMIENTO:
-    EJEMPLO: rangobits(10101110, 1, 4) -> 0111 -> 7
+    FUNCION: mostrarResultados()
+    DESCRIPCION: Muestra el número de aciertos y fallos, asi como la tasa de
+                 fallos.
 ******************************************************************************/
 void mostrarResultados() {
     float Tasa_Fallos = (Miss / (float)(Hit + Miss)) * 100;
@@ -651,4 +598,4 @@ void mostrarResultados() {
         "\n----------------\n\n",
         Hit, Miss, Tasa_Fallos);
 }
-//  ---  ---
+//  --- FIN ---
