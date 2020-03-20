@@ -33,8 +33,6 @@ unsigned char
     bit_max_conjunto,  // Posicion (0 - N-1) del bit de mayor posicion de linea
     bit_max_linea;     // Posicion (0 - N-1) del bit de mayor posicion
                        // del conjunto
-char DirConfig[] = "./config.txt";  // Direccion del fichero de configuracion
-char DirTraza[] = "./traza.txt";    // Direccion del fichero con la traza
 
 //---------------- DECLARACION FUNCIONES ------------------------
 /**************************
@@ -46,8 +44,8 @@ Cache* crearCache(unsigned long nConjuntos, unsigned long Asociatividad);
 /**************************
  *   LEER CONFIGS/TRAZAS   *
  ***************************/
-void leerConfigCache();
-void leerTrazas();
+void leerConfigCache(char* DirConfig);
+void leerTrazas(char* DirTraza);
 /**************************
  *    CALCULOS DE BITS     *
  ***************************/
@@ -84,10 +82,15 @@ void mostrarContenidoConjunto(Conjunto* C, unsigned char nCon);
 void mostrarBits(Conjunto* C, Linea* linea, unsigned char nCon);
 
 //----------------------- MAIN -------------------------------
-int main() {
+int main(int argc, char* argv[]) {
     f = crearFichero();
-    leerConfigCache();
-    leerTrazas();
+    if (argc > 2) {
+        leerConfigCache(argv[1]);
+        leerTrazas(argv[2]);
+    } else {
+        leerConfigCache("./config.txt");
+        leerTrazas("./traza.txt");
+    }
     // Procesar las trazas
     printf("----------------------\n");
     Conjunto* C;
@@ -97,8 +100,16 @@ int main() {
     }
     // Fin del procesamiento
     mostrarResultados();
-    mostrarContenidoCache(cache);
-    // mostrarContenidoCache(vcache);
+    if (argc > 3) {
+        if (argv[3][0] == '1') {
+            mostrarContenidoCache(cache);
+        } else if (argv[3][0] == '2') {
+            mostrarContenidoCache(vcache);
+        } else if (argv[3][0] == '3') {
+            mostrarContenidoCache(cache);
+            mostrarContenidoCache(vcache);
+        }
+    }
     return 0;
 }
 
@@ -155,7 +166,7 @@ Cache* crearCache(unsigned long nConjuntos, unsigned long Asociatividad) {
     DESCRIPCION: Lee el archivo de trazas que simularan los accesos a memoria de
                  la cache.
  *******************************************************************************/
-void leerTrazas() {
+void leerTrazas(char* DirTraza) {
     inicializarFicheroLectura(f, DirTraza);
     long a = 0;
     for (long i = 0; i < N && a != -1; i++) {
@@ -169,7 +180,7 @@ void leerTrazas() {
     FUNCION: leerConfigCache()
     DESCRIPCION: Lee el archivo de configuracion para generar la cache y la VC
 *******************************************************************************/
-void leerConfigCache() {
+void leerConfigCache(char* DirConfig) {
     inicializarFicheroLectura(f, DirConfig);
     unsigned long nLineas = leerIntFichero(f), TamLineas = leerIntFichero(f),
                   Asociatividad = leerIntFichero(f),
@@ -297,7 +308,6 @@ unsigned long int rangobits(unsigned long int n, int bitmenor, int bitmayor) {
 /****************************
  *            LRU           *
  *****************************/
-
 /*****************************************************************************
     FUNCION: Actualizar_Antiguedad(C)
     DESCRIPCION: Aumenta en 1 la antiguedad de todas las lineas del conjunto
@@ -499,13 +509,13 @@ Linea* buscarEnConjuntoVC(Conjunto* C, unsigned long direccion) {
     FUNCION:  mostrarBits(C, linea, nCon)
     DESCRIPCION: Muestra una linea en formato binario y hexadecimal separando
                  el TAG, el conjunto y los bits de linea.
-    FUNCIONAMIENTO: Se crea la variable 'i' la cual tiene tantos bits como 
+    FUNCIONAMIENTO: Se crea la variable 'i' la cual tiene tantos bits como
                     el maximo tamaño posible de direcciones (constante TAM_DIR)
                     menos el tamaño actual de las direccion a mostrar.
                     Despues se concatenan los bits del tag y del conjunto.
                     Se ponen los bits de linea a 0 y se guarda esa dirección
                     en la variable 'dir_l' la cual es la direccion mas baja
-                    de la linea. Tras esto, se ponen los bits de linea a 1 y 
+                    de la linea. Tras esto, se ponen los bits de linea a 1 y
                     se guarda en 'dir_h', la cual es la direccion mas alta de
                     la linea.
 ******************************************************************************/
@@ -540,8 +550,7 @@ void mostrarBits(Conjunto* C, Linea* linea, unsigned char nCon) {
     // Poner a 1 los bit_maxlinea+1 ultimos bits de dir_l
     if (bit_max_linea > 0) {
         printf("|");
-        for (i = 0; i <= bit_max_linea; i++)
-            printf("x");
+        for (i = 0; i <= bit_max_linea; i++) printf("x");
     }
     printf(" -> 0x%x - 0x%x\n", dir_l, dir_h);
 }
